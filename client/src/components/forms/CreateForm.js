@@ -1,321 +1,10 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDrop } from 'react-dnd';
 import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
-
-// Field types available in the form builder
-const FIELD_TYPES = [
-  { type: 'text', label: 'Short Answer', icon: 'T' },
-  { type: 'textarea', label: 'Long Answer', icon: 'AB' },
-  { type: 'number', label: 'Number', icon: '#' },
-  { type: 'email', label: 'Email', icon: '@' },
-  { type: 'phone', label: 'Phone', icon: '📞' },
-  { type: 'date', label: 'Date', icon: '📅' },
-  { type: 'dropdown', label: 'Dropdown', icon: '▼' },
-  { type: 'checkbox', label: 'Checkboxes', icon: '☐' },
-  { type: 'radio', label: 'Multiple Choice', icon: '○' },
-  { type: 'file', label: 'File Upload', icon: '📁' },
-  { type: 'rating', label: 'Rating', icon: '⭐' }
-];
-
-// Component for draggable field items
-const DraggableField = ({ field, onEdit, onDelete, onDuplicate }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [fieldData, setFieldData] = useState({ ...field });
-
-  const handleSave = () => {
-    onEdit(field.id, fieldData);
-    setIsEditing(false);
-  };
-
-  const handleCancel = () => {
-    setFieldData({ ...field });
-    setIsEditing(false);
-  };
-
-  const renderFieldEditor = () => {
-    switch (field.type) {
-      case 'text':
-      case 'email':
-      case 'phone':
-      case 'number':
-        return (
-          <div>
-            <input
-              type="text"
-              className="form-input w-full mb-2"
-              value={fieldData.label}
-              onChange={(e) => setFieldData({...fieldData, label: e.target.value})}
-              placeholder="Question"
-            />
-            <input
-              type="text"
-              className="form-input w-full mb-2"
-              value={fieldData.placeholder || ''}
-              onChange={(e) => setFieldData({...fieldData, placeholder: e.target.value})}
-              placeholder="Placeholder text"
-            />
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={fieldData.required || false}
-                onChange={(e) => setFieldData({...fieldData, required: e.target.checked})}
-                className="mr-2"
-              />
-              Required
-            </label>
-          </div>
-        );
-      case 'textarea':
-        return (
-          <div>
-            <input
-              type="text"
-              className="form-input w-full mb-2"
-              value={fieldData.label}
-              onChange={(e) => setFieldData({...fieldData, label: e.target.value})}
-              placeholder="Question"
-            />
-            <textarea
-              className="form-input w-full mb-2"
-              value={fieldData.placeholder || ''}
-              onChange={(e) => setFieldData({...fieldData, placeholder: e.target.value})}
-              placeholder="Placeholder text"
-              rows="2"
-            />
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={fieldData.required || false}
-                onChange={(e) => setFieldData({...fieldData, required: e.target.checked})}
-                className="mr-2"
-              />
-              Required
-            </label>
-          </div>
-        );
-      case 'dropdown':
-      case 'radio':
-      case 'checkbox':
-        return (
-          <div>
-            <input
-              type="text"
-              className="form-input w-full mb-2"
-              value={fieldData.label}
-              onChange={(e) => setFieldData({...fieldData, label: e.target.value})}
-              placeholder="Question"
-            />
-            <label className="flex items-center mb-2">
-              <input
-                type="checkbox"
-                checked={fieldData.required || false}
-                onChange={(e) => setFieldData({...fieldData, required: e.target.checked})}
-                className="mr-2"
-              />
-              Required
-            </label>
-            <div className="mb-2">
-              <label className="block mb-1">Options:</label>
-              {(fieldData.options || []).map((option, idx) => (
-                <div key={idx} className="flex mb-1">
-                  <input
-                    type="text"
-                    className="form-input flex-1 mr-1"
-                    value={option.label}
-                    onChange={(e) => {
-                      const newOptions = [...(fieldData.options || [])];
-                      newOptions[idx].label = e.target.value;
-                      setFieldData({...fieldData, options: newOptions});
-                    }}
-                    placeholder={`Option ${idx + 1}`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const newOptions = [...(fieldData.options || [])];
-                      newOptions.splice(idx, 1);
-                      setFieldData({...fieldData, options: newOptions});
-                    }}
-                    className="btn btn-danger text-xs ml-1"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => {
-                  const newOptions = [...(fieldData.options || []), { value: `option_${uuidv4()}`, label: '' }];
-                  setFieldData({...fieldData, options: newOptions});
-                }}
-                className="btn btn-outline text-xs mt-1"
-              >
-                Add Option
-              </button>
-            </div>
-          </div>
-        );
-      case 'date':
-        return (
-          <div>
-            <input
-              type="text"
-              className="form-input w-full mb-2"
-              value={fieldData.label}
-              onChange={(e) => setFieldData({...fieldData, label: e.target.value})}
-              placeholder="Question"
-            />
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={fieldData.required || false}
-                onChange={(e) => setFieldData({...fieldData, required: e.target.checked})}
-                className="mr-2"
-              />
-              Required
-            </label>
-          </div>
-        );
-      case 'file':
-        return (
-          <div>
-            <input
-              type="text"
-              className="form-input w-full mb-2"
-              value={fieldData.label}
-              onChange={(e) => setFieldData({...fieldData, label: e.target.value})}
-              placeholder="Question"
-            />
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={fieldData.required || false}
-                onChange={(e) => setFieldData({...fieldData, required: e.target.checked})}
-                className="mr-2"
-              />
-              Required
-            </label>
-          </div>
-        );
-      case 'rating':
-        return (
-          <div>
-            <input
-              type="text"
-              className="form-input w-full mb-2"
-              value={fieldData.label}
-              onChange={(e) => setFieldData({...fieldData, label: e.target.value})}
-              placeholder="Question"
-            />
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={fieldData.required || false}
-                onChange={(e) => setFieldData({...fieldData, required: e.target.checked})}
-                className="mr-2"
-              />
-              Required
-            </label>
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div className="form-field-item">
-      <div className="form-field-content">
-        {!isEditing ? (
-          <div>
-            <div className="font-medium mb-2">{field.label || `Untitled ${field.type}`}</div>
-            {renderFieldPreview(field)}
-          </div>
-        ) : (
-          renderFieldEditor()
-        )}
-      </div>
-      
-      <div className="field-controls">
-        <button 
-          className="btn btn-outline text-xs"
-          onClick={() => isEditing ? handleSave() : setIsEditing(true)}
-        >
-          {isEditing ? 'Save' : 'Edit'}
-        </button>
-        <button 
-          className="btn btn-outline text-xs"
-          onClick={onDuplicate}
-        >
-          Duplicate
-        </button>
-        <button 
-          className="btn btn-danger text-xs"
-          onClick={onDelete}
-        >
-          Delete
-        </button>
-      </div>
-    </div>
-  );
-};
-
-const renderFieldPreview = (field) => {
-  switch (field.type) {
-    case 'text':
-    case 'email':
-    case 'phone':
-    case 'number':
-      return <input type={field.type} className="response-input" placeholder={field.placeholder || ''} disabled />;
-    case 'textarea':
-      return <textarea className="response-input" placeholder={field.placeholder || ''} disabled />;
-    case 'dropdown':
-      return (
-        <select className="response-input" disabled>
-          <option value="">Select an option</option>
-          {(field.options || []).map((option, idx) => (
-            <option key={idx} value={option.value}>{option.label}</option>
-          ))}
-        </select>
-      );
-    case 'radio':
-      return (
-        <div>
-          {(field.options || []).map((option, idx) => (
-            <div key={idx} className="response-option">
-              <input type="radio" disabled /> <span>{option.label}</span>
-            </div>
-          ))}
-        </div>
-      );
-    case 'checkbox':
-      return (
-        <div>
-          {(field.options || []).map((option, idx) => (
-            <div key={idx} className="response-option">
-              <input type="checkbox" disabled /> <span>{option.label}</span>
-            </div>
-          ))}
-        </div>
-      );
-    case 'date':
-      return <input type="date" className="response-input" disabled />;
-    case 'file':
-      return <input type="file" className="response-input" disabled />;
-    case 'rating':
-      return (
-        <div className="flex">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <span key={star} className="text-yellow-400 text-xl">★</span>
-          ))}
-        </div>
-      );
-    default:
-      return <input type="text" className="response-input" disabled />;
-  }
-};
+import AddFieldButton from './builder/AddFieldButton';
+import FormFieldCard from './builder/FormFieldCard';
+import { hasOptions } from './builder/FieldTypes';
 
 const CreateForm = () => {
   const [formData, setFormData] = useState({
@@ -323,171 +12,159 @@ const CreateForm = () => {
     description: '',
     fields: []
   });
-  const [activeTab, setActiveTab] = useState('form');
-
+  const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
 
-  const [{ isOver }, drop] = useDrop({
-    accept: 'FIELD',
-    drop: (item) => addField(item.type),
-    collect: (monitor) => ({
-      isOver: !!monitor.isOver()
-    })
+  const createField = (type) => ({
+    id: uuidv4(),
+    type,
+    label: '',
+    required: false,
+    placeholder: '',
+    options: hasOptions(type) ? [{ value: uuidv4(), label: 'Option 1' }] : undefined
   });
 
   const addField = (type) => {
-    const newField = {
-      id: uuidv4(),
-      type,
-      label: `Untitled ${type}`,
-      required: false,
-      ...(type === 'dropdown' || type === 'radio' || type === 'checkbox' ? { options: [] } : {})
-    };
-    
     setFormData(prev => ({
       ...prev,
-      fields: [...prev.fields, newField]
+      fields: [...prev.fields, createField(type)]
     }));
   };
 
-  const handleFieldEdit = (fieldId, updatedField) => {
+  const addFieldAfter = (index, type) => {
+    const newFields = [...formData.fields];
+    newFields.splice(index + 1, 0, createField(type));
+    setFormData(prev => ({ ...prev, fields: newFields }));
+  };
+
+  const updateField = (id, data) => {
     setFormData(prev => ({
       ...prev,
-      fields: prev.fields.map(field => 
-        field.id === fieldId ? { ...field, ...updatedField } : field
-      )
+      fields: prev.fields.map(f => f.id === id ? { ...f, ...data } : f)
     }));
   };
 
-  const handleFieldDelete = (fieldId) => {
+  const deleteField = (id) => {
     setFormData(prev => ({
       ...prev,
-      fields: prev.fields.filter(field => field.id !== fieldId)
+      fields: prev.fields.filter(f => f.id !== id)
     }));
   };
 
-  const handleFieldDuplicate = (fieldId) => {
-    const fieldToDuplicate = formData.fields.find(field => field.id === fieldId);
-    if (fieldToDuplicate) {
-      const duplicatedField = {
-        ...fieldToDuplicate,
-        id: uuidv4()
-      };
-      setFormData(prev => ({
-        ...prev,
-        fields: [...prev.fields, duplicatedField]
-      }));
+  const duplicateField = (id) => {
+    const field = formData.fields.find(f => f.id === id);
+    if (field) {
+      const idx = formData.fields.findIndex(f => f.id === id);
+      const newField = { ...field, id: uuidv4() };
+      const newFields = [...formData.fields];
+      newFields.splice(idx + 1, 0, newField);
+      setFormData(prev => ({ ...prev, fields: newFields }));
     }
   };
 
-  const moveField = (fromIndex, toIndex) => {
+  const moveField = (id, direction) => {
+    const idx = formData.fields.findIndex(f => f.id === id);
+    const newIdx = idx + direction;
+    if (newIdx < 0 || newIdx >= formData.fields.length) return;
+    
     const newFields = [...formData.fields];
-    const [movedItem] = newFields.splice(fromIndex, 1);
-    newFields.splice(toIndex, 0, movedItem);
-    setFormData(prev => ({
-      ...prev,
-      fields: newFields
-    }));
+    [newFields[idx], newFields[newIdx]] = [newFields[newIdx], newFields[idx]];
+    setFormData(prev => ({ ...prev, fields: newFields }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
+  const handleSubmit = async () => {
+    if (!formData.title.trim()) {
+      alert('Please enter a form title');
+      return;
+    }
+    if (formData.fields.length === 0) {
+      alert('Please add at least one question');
+      return;
+    }
+
+    setSaving(true);
     try {
       const token = localStorage.getItem('token');
-      const config = {
-        headers: {
-          'Content-Type': 'application/json',
-          'x-auth-token': token
-        }
-      };
-
-      const formPayload = {
-        title: formData.title,
-        description: formData.description,
-        fields: formData.fields
-      };
-
-      await axios.post('/api/forms', formPayload, config);
-      
-      // Redirect to dashboard after successful creation
+      await axios.post('/api/forms', formData, {
+        headers: { 'Content-Type': 'application/json', 'x-auth-token': token }
+      });
       navigate('/dashboard');
     } catch (err) {
-      console.error('Error creating form:', err.response?.data || err.message);
+      alert(err.response?.data?.msg || 'Failed to save form');
+      setSaving(false);
     }
   };
 
   return (
-    <div className="form-builder-container">
-      {/* Left Panel - Available Fields */}
-      <div className="form-fields-panel">
-        <h3 className="font-semibold mb-4">Add Fields</h3>
-        <div className="space-y-2">
-          {FIELD_TYPES.map((fieldType, index) => (
-            <div
-              key={index}
-              className="p-3 border rounded cursor-move bg-white shadow-sm hover:shadow-md transition-shadow"
-              draggable
-              onDragStart={(e) => e.dataTransfer.setData('fieldType', fieldType.type)}
-            >
-              <div className="flex items-center">
-                <span className="mr-2 text-gray-500">{fieldType.icon}</span>
-                <span>{fieldType.label}</span>
-              </div>
-            </div>
-          ))}
+    <div className="max-w-2xl mx-auto py-6 px-4">
+      {/* Form Header Card */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+        <div className="h-2 bg-gradient-to-r from-blue-500 to-purple-500"></div>
+        <div className="p-6">
+          <input
+            type="text"
+            value={formData.title}
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            placeholder="Untitled Form"
+            className="w-full text-2xl font-semibold text-gray-800 border-none outline-none placeholder-gray-400 mb-2"
+          />
+          <textarea
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            placeholder="Form description (optional)"
+            rows="2"
+            className="w-full text-gray-600 border-none outline-none placeholder-gray-400 resize-none"
+          />
         </div>
       </div>
 
-      {/* Main Canvas - Form Preview */}
-      <div 
-        ref={drop} 
-        className={`form-canvas ${isOver ? 'bg-blue-50' : ''}`}
-      >
-        <div className="mb-6">
-          <input
-            type="text"
-            className="form-input text-2xl font-bold w-full mb-2"
-            value={formData.title}
-            onChange={(e) => setFormData({...formData, title: e.target.value})}
-            placeholder="Form Title"
-          />
-          <textarea
-            className="form-input w-full"
-            value={formData.description}
-            onChange={(e) => setFormData({...formData, description: e.target.value})}
-            placeholder="Form Description"
-            rows="2"
-          />
-        </div>
-
+      {/* Fields Container */}
+      <div className="min-h-[200px]">
         {formData.fields.length === 0 ? (
-          <div className="text-center text-gray-500 py-12">
-            <p>Drag fields from the left panel to start building your form</p>
+          <div className="text-center py-12">
+            <div className="text-5xl mb-4 opacity-50">📋</div>
+            <h3 className="text-lg font-semibold text-gray-700 mb-1">No questions yet</h3>
+            <p className="text-gray-500 mb-6">Click the button below to add your first question</p>
+            <div className="flex justify-center">
+              <AddFieldButton onAddField={addField} />
+            </div>
           </div>
         ) : (
-          <div>
+          <>
             {formData.fields.map((field, index) => (
-              <DraggableField
+              <FormFieldCard
                 key={field.id}
                 field={field}
-                onEdit={handleFieldEdit}
-                onDelete={() => handleFieldDelete(field.id)}
-                onDuplicate={() => handleFieldDuplicate(field.id)}
+                index={index}
+                totalFields={formData.fields.length}
+                onUpdate={updateField}
+                onDelete={deleteField}
+                onDuplicate={duplicateField}
+                onMove={moveField}
+                onAddFieldAfter={addFieldAfter}
               />
             ))}
-          </div>
+          </>
         )}
+      </div>
 
-        <div className="mt-6">
-          <button 
-            className="btn btn-primary" 
-            onClick={handleSubmit}
-            disabled={!formData.title.trim() || formData.fields.length === 0}
-          >
-            Save Form
-          </button>
-        </div>
+      {/* Footer Actions */}
+      <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
+        <button
+          type="button"
+          onClick={() => navigate('/dashboard')}
+          className="px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={saving}
+          className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {saving ? 'Saving...' : 'Save Form'}
+        </button>
       </div>
     </div>
   );
