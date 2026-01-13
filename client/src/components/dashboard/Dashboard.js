@@ -16,14 +16,9 @@ const Dashboard = () => {
           setLoading(false);
           return;
         }
-        const config = {
-          headers: {
-            'Content-Type': 'application/json',
-            'x-auth-token': token
-          }
-        };
-
-        const res = await axios.get('/api/forms', config);
+        const res = await axios.get('/api/forms', {
+          headers: { 'x-auth-token': token }
+        });
         setForms(res.data);
         setLoading(false);
       } catch (err) {
@@ -40,66 +35,74 @@ const Dashboard = () => {
   }, [authLoading, isAuthenticated]);
 
   if (authLoading || loading) {
-    return <div className="text-center mt-8">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    );
   }
 
   if (!isAuthenticated) {
     return (
-      <div className="text-center mt-8">
-        <p>Please <Link to="/login">login</Link> to view your dashboard.</p>
+      <div className="text-center py-16">
+        <p className="text-gray-600">
+          Please <Link to="/login" className="text-blue-600 hover:underline">login</Link> to view your dashboard.
+        </p>
       </div>
     );
   }
 
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
-      
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl">Your Forms</h2>
-        <Link to="/create-form" className="btn btn-primary">
-          Create New Form
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600">Welcome back, {user?.name}</p>
+        </div>
+        <Link 
+          to="/create-form" 
+          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+        >
+          + Create Form
         </Link>
       </div>
 
       {forms.length === 0 ? (
-        <div className="text-center py-12">
-          <h3 className="text-lg font-medium mb-2">You don't have any forms yet</h3>
-          <p className="text-gray-600 mb-4">Get started by creating your first form</p>
-          <Link to="/create-form" className="btn btn-primary">
+        <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
+          <div className="text-5xl mb-4">📋</div>
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">No forms yet</h3>
+          <p className="text-gray-500 mb-6">Get started by creating your first form</p>
+          <Link 
+            to="/create-form" 
+            className="px-5 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+          >
             Create Form
           </Link>
         </div>
       ) : (
-        <div className="dashboard-grid">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {forms.map(form => (
-            <div key={form._id} className="form-card">
-              <h3 className="form-card-title">{form.title}</h3>
-              <p className="text-gray-600 mb-3">{form.description || 'No description'}</p>
+            <div key={form._id} className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">{form.title}</h3>
+              <p className="text-sm text-gray-500 mb-4">{form.description || 'No description'}</p>
               
-              <div className="form-card-stats">
-                <span>{form.responsesCount} responses</span>
-                <span>{form.fields.length} fields</span>
+              <div className="flex justify-between text-xs text-gray-400 mb-4">
+                <span>{form.responsesCount || 0} responses</span>
+                <span>{form.fields?.length || 0} fields</span>
               </div>
               
-              <div className="mt-4 flex gap-2">
+              <div className="flex gap-2">
                 <Link 
                   to={`/form/${form._id}`} 
-                  className="btn btn-outline text-sm flex-1 text-center"
+                  className="flex-1 text-center px-3 py-2 text-xs font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
                   Preview
                 </Link>
                 <Link 
                   to={`/form/${form._id}/responses`} 
-                  className="btn btn-outline text-sm flex-1 text-center"
+                  className="flex-1 text-center px-3 py-2 text-xs font-medium text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
                   Responses
-                </Link>
-                <Link 
-                  to={`/form/${form._id}/analytics`} 
-                  className="btn btn-outline text-sm flex-1 text-center"
-                >
-                  Analytics
                 </Link>
               </div>
             </div>

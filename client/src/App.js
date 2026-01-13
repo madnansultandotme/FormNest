@@ -1,7 +1,5 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
 
 // Components
 import Navbar from './components/Navbar';
@@ -20,34 +18,29 @@ import Alert from './components/layout/Alert';
 import AuthState from './context/AuthState';
 import AlertState from './context/AlertState';
 
-// CSS
-import './App.css';
-
 function App() {
   return (
     <AuthState>
       <AlertState>
-        <DndProvider backend={HTML5Backend}>
-          <Router>
-            <>
-              <Navbar />
-              <Alert />
-              <div className="container">
-                <Routes>
-                  <Route path="/" element={<Home />} />
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/register" element={<Register />} />
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/create-form" element={<CreateForm />} />
-                  <Route path="/form/:id" element={<FormPreview />} />
-                  <Route path="/form/:id/responses" element={<FormResponses />} />
-                  <Route path="/form/:id/analytics" element={<FormAnalytics />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </div>
-            </>
-          </Router>
-        </DndProvider>
+        <Router>
+          <div className="min-h-screen bg-gray-50">
+            <Navbar />
+            <Alert />
+            <main>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/create-form" element={<CreateForm />} />
+                <Route path="/form/:id" element={<FormPreview />} />
+                <Route path="/form/:id/responses" element={<FormResponses />} />
+                <Route path="/form/:id/analytics" element={<FormAnalytics />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </main>
+          </div>
+        </Router>
       </AlertState>
     </AuthState>
   );
