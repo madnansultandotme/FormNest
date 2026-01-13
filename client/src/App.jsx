@@ -5,6 +5,7 @@ import Login from './components/auth/Login'
 import Register from './components/auth/Register'
 import Dashboard from './components/dashboard/Dashboard'
 import CreateForm from './components/forms/CreateForm'
+import EditForm from './components/forms/EditForm'
 import FormPreview from './components/forms/FormPreview'
 import FormResponses from './components/forms/FormResponses'
 import NotFound from './components/layout/NotFound'
@@ -17,7 +18,7 @@ function App() {
     <AuthState>
       <AlertState>
         <Router>
-          <div className="min-h-screen bg-gray-50">
+          <div className="min-h-screen bg-background">
             <Navbar />
             <Alert />
             <main>
@@ -27,6 +28,7 @@ function App() {
                 <Route path="/register" element={<Register />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/create-form" element={<CreateForm />} />
+                <Route path="/edit-form/:id" element={<EditForm />} />
                 <Route path="/form/:id" element={<FormPreview />} />
                 <Route path="/form/:id/responses" element={<FormResponses />} />
                 <Route path="*" element={<NotFound />} />

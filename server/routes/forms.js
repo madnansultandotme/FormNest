@@ -52,12 +52,13 @@ router.post('/', [auth, [
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { title, description, fields, theme, settings, sharing } = req.body;
+  const { title, description, headerImage, fields, theme, settings, sharing } = req.body;
 
   try {
     const newForm = new Form({
       title,
       description,
+      headerImage,
       fields,
       theme,
       settings,
@@ -84,7 +85,7 @@ router.put('/:id', [auth, [
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { title, description, fields, theme, settings, sharing } = req.body;
+  const { title, description, headerImage, fields, theme, settings, sharing } = req.body;
 
   try {
     let form = await Form.findById(req.params.id);
@@ -101,6 +102,7 @@ router.put('/:id', [auth, [
     const updateData = {
       title,
       description,
+      headerImage,
       fields,
       theme,
       settings,

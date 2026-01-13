@@ -1,18 +1,40 @@
-import { useState, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { v4 as uuidv4 } from 'uuid'
 import axios from 'axios'
-import { ClipboardList, ImagePlus, X } from 'lucide-react'
+import { ClipboardList, Loader2, ImagePlus, X } from 'lucide-react'
 import AddFieldButton from './builder/AddFieldButton'
 import FormFieldCard from './builder/FormFieldCard'
 import { hasOptions } from './builder/FieldTypes'
 
-const CreateForm = () => {
+const EditForm = () => {
+  const { id } = useParams()
   const [formData, setFormData] = useState({ title: '', description: '', headerImage: '', fields: [] })
   const [saving, setSaving] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [dragIndex, setDragIndex] = useState(null)
   const fileInputRef = useRef(null)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const fetchForm = async () => {
+      try {
+        const token = localStorage.getItem('token')
+        const res = await axios.get(`/api/forms/${id}`, { headers: { 'x-auth-token': token } })
+        setFormData({
+          title: res.data.title || '',
+          description: res.data.description || '',
+          headerImage: res.data.headerImage || '',
+          fields: res.data.fields || []
+        })
+      } catch (err) {
+        setError(err.response?.data?.msg || 'Failed to load form')
+      }
+      setLoading(false)
+    }
+    fetchForm()
+  }, [id])
 
   const createField = (type) => ({
     id: uuidv4(), type, label: '', required: false, placeholder: '',
@@ -78,13 +100,27 @@ const CreateForm = () => {
     setSaving(true)
     try {
       const token = localStorage.getItem('token')
-      await axios.post('/api/forms', formData, { headers: { 'Content-Type': 'application/json', 'x-auth-token': token } })
+      await axios.put(`/api/forms/${id}`, formData, { headers: { 'Content-Type': 'application/json', 'x-auth-token': token } })
       navigate('/dashboard')
     } catch (err) {
-      alert(err.response?.data?.msg || 'Failed to save form')
+      alert(err.response?.data?.msg || 'Failed to update form')
       setSaving(false)
     }
   }
+
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-[400px] text-text-muted">
+      <Loader2 className="w-6 h-6 animate-spin mr-2" />
+      Loading form...
+    </div>
+  )
+
+  if (error) return (
+    <div className="text-center py-16">
+      <p className="text-red-500 mb-4">{error}</p>
+      <button onClick={() => navigate('/dashboard')} className="text-primary hover:underline">Back to Dashboard</button>
+    </div>
+  )
 
   return (
     <div className="max-w-2xl mx-auto py-6 px-4">
@@ -116,7 +152,7 @@ const CreateForm = () => {
           onChange={handleImageUpload}
           className="hidden"
         />
-        
+
         <div className="h-2 bg-gradient-to-r from-primary to-secondary"></div>
         <div className="p-6">
           <input type="text" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="Untitled Form" className="w-full text-2xl font-semibold text-text-primary border-none outline-none placeholder-text-muted mb-2 bg-transparent" />
@@ -160,10 +196,10 @@ const CreateForm = () => {
 
       <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-border">
         <button type="button" onClick={() => navigate('/dashboard')} className="px-5 py-2.5 text-sm font-medium text-text-primary bg-card border border-border rounded-lg hover:bg-accent">Cancel</button>
-        <button type="button" onClick={handleSubmit} disabled={saving} className="px-5 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover disabled:opacity-50">{saving ? 'Saving...' : 'Save Form'}</button>
+        <button type="button" onClick={handleSubmit} disabled={saving} className="px-5 py-2.5 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover disabled:opacity-50">{saving ? 'Saving...' : 'Update Form'}</button>
       </div>
     </div>
   )
 }
 
-export default CreateForm
+export default EditForm

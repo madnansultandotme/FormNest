@@ -48,6 +48,10 @@ const formSchema = new mongoose.Schema({
     required: true
   },
   description: String,
+  headerImage: {
+    type: String,
+    default: ''
+  },
   fields: [formFieldSchema],
   creator: {
     type: mongoose.Schema.Types.ObjectId,
